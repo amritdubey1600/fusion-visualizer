@@ -9,10 +9,15 @@ export interface PathStep {
   toColumn: string;
 }
 
+export interface KPath {
+  cost: number;
+  edges: PathStep[];
+}
+
 
 export default function Home() {
   const [result, setResult] = useState<string>("");
-  const [routePath, setRoutePath] = useState<PathStep[] | null>(null);
+  const [routePaths, setRoutePaths] = useState<KPath[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
   const [data, setData] = useState({ fromTable: "", toTable: "" });
@@ -20,15 +25,18 @@ export default function Home() {
   async function fetchData() {
     if (!data.fromTable.trim() || !data.toTable.trim()) return;
     setLoading(true);
-    setRoutePath(null);
+    setRoutePaths([]);
     setResult("");
     setError(false);
     try {
       const res = await fetch(`/api?fromTable=${encodeURIComponent(data.fromTable)}&toTable=${encodeURIComponent(data.toTable)}`);
       const json = await res.json();
+
       setResult(json.message || json.error || "Unknown response");
       setError(!res.ok);
-      setRoutePath(json.path ?? null);
+
+      console.log("API response:", json.path);
+      setRoutePaths(json.path ?? []);
     } catch {
       setResult("Network error — could not reach the server.");
       setError(true);
@@ -191,45 +199,82 @@ export default function Home() {
             </div>
           )}
 
-          {/* Result card */}
-          {routePath && routePath.length > 0 && (
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-
-              <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  <span className="text-sm font-semibold text-slate-700">Relationship Path</span>
+          {/* Result cards */}
+        {routePaths.length > 0 && (
+          <div className="flex flex-col gap-6">
+            {routePaths.map((pathObj, pathIdx) => (
+              <div
+                key={pathIdx}
+                className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+              >
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-sm font-semibold text-slate-700">
+                      Path #{pathIdx + 1}
+                    </span>
+                  </div>
+            
+                  <div className="flex gap-2">
+                    <span className="text-xs font-mono bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full">
+                      Cost: {pathObj.cost}
+                    </span>
+            
+                    <span className="text-xs font-mono bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">
+                      {pathObj.edges.length} hop
+                      {pathObj.edges.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-xs font-mono bg-slate-100 text-slate-500 px-2.5 py-1 rounded-full">
-                  {routePath.length} hop{routePath.length !== 1 ? "s" : ""}
-                </span>
-              </div>
-
-              <div className="px-6 py-8 bg-slate-50 border-b border-slate-100">
-                <PathGraph path={routePath} />
-              </div>
-
-              <div className="px-6 py-4">
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">Join Conditions</p>
-                <div className="flex flex-col divide-y divide-slate-100">
-                  {routePath.map((step, i) => (
-                    <div key={i} className="flex items-center gap-3 py-3 flex-wrap">
-                      <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center shrink-0">
-                        {i + 1}
-                      </span>
-                      <div className="flex items-center gap-1.5 flex-wrap text-sm">
-                        <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">{step.fromTable}</span>
-                        <span className="text-slate-400 font-mono text-xs">.{step.fromColumn}</span>
-                        <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">JOIN</span>
-                        <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">{step.toTable}</span>
-                        <span className="text-slate-400 font-mono text-xs">.{step.toColumn}</span>
+            
+                <div className="px-6 py-8 bg-slate-50 border-b border-slate-100">
+                  <PathGraph path={pathObj.edges} />
+                </div>
+            
+                <div className="px-6 py-4">
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">
+                    Join Conditions
+                  </p>
+            
+                  <div className="flex flex-col divide-y divide-slate-100">
+                    {pathObj.edges.map((step, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 py-3 flex-wrap"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-500 text-xs font-bold flex items-center justify-center shrink-0">
+                          {i + 1}
+                        </span>
+                    
+                        <div className="flex items-center gap-1.5 flex-wrap text-sm">
+                          <span className="font-mono font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded">
+                            {step.fromTable}
+                          </span>
+                    
+                          <span className="text-slate-400 font-mono text-xs">
+                            .{step.fromColumn}
+                          </span>
+                    
+                          <span className="text-xs font-semibold text-slate-400 bg-slate-100 px-2 py-0.5 rounded">
+                            JOIN
+                          </span>
+                    
+                          <span className="font-mono font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded">
+                            {step.toTable}
+                          </span>
+                    
+                          <span className="text-slate-400 font-mono text-xs">
+                            .{step.toColumn}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            ))}
+          </div>
+        )}
         </main>
       </div>
     </>
