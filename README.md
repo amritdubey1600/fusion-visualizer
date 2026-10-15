@@ -5,7 +5,7 @@
 Find the join path between any two tables in Oracle Fusion Applications, and get back the join that actually makes business sense, not just the shortest one.
 
 <p align="center">
-  <img src="docs/screenshots/home.png" alt="Fusion Visualizer home screen" width="85%">
+  <img src="home.png" alt="Fusion Visualizer home screen" width="85%">
 </p>
 
 ---
@@ -26,7 +26,7 @@ Fusion Visualizer automates the whole process:
 4. **Visualizes the result** as an interactive path with the exact `JOIN` conditions ready to use.
 
 <p align="center">
-  <img src="docs/screenshots/join-path-result.png" alt="Join path result showing path, cost, hops and join conditions" width="70%">
+  <img src="join-path-result.png" alt="Join path result showing path, cost, hops and join conditions" width="70%">
 </p>
 
 ---
